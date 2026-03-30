@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Year Calendar with Events</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .tooltip {
+      position: absolute;
+      z-index: 10;
+      display: none;
+    }
+    .group:hover .tooltip {
+      display: block;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 p-6">
+
+<div class="max-w-7xl mx-auto bg-white rounded-2xl p-6 shadow">
+  <h1 class="text-2xl font-semibold mb-2">2026 Barre & Bars Gymnastics Competition Calendar</h1>
+  
+
+  <div class="flex flex-wrap gap-2 mb-3" id="legend"></div>
+  <div class="flex flex-wrap gap-2 mb-6" id="statusLegend"></div>
+
+  <div id="calendar" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8"></div>
+</div>
+
+<script>
+const monthNames = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December"
+];
+
+const weekDays = ["S","M","T","W","T","F","S"];
+
+const events = [
+  { title: "Metro Gymnastics Meet 2026", date: "2026-05-02", label: "Competition Day", status: "joining" },
+  { title: "ISM Goodwill Gymnastics Meet 2026", date: "2026-05-16", label: "Competition Day", status: "not joining" },
+  { title: "Antipolo Gymnastics Meet 2026", date: "2026-07-04", label: "Competition Day", status: "tentative" },
+  { title: "2nd Athletica Gymnastics Meet 2026", date: "2026-09-19", label: "Competition Day", status: "joining" },
+
+  { title: "2nd Madayaw Gymnastics Cup 2026 - Davao City (Day 1)", date: "2026-08-21", label: "Competition Day", status: "tentative" },
+  { title: "2nd Madayaw Gymnastics Cup 2026 - Davao City (Day 2)", date: "2026-08-22", label: "Competition Day", status: "tentative" },
+
+  { title: "S.TY International Gymnastics Cup - Day 1", date: "2026-10-16", label: "Competition Day", status: "tentative" },
+  { title: "S.TY International Gymnastics Cup - Day 2", date: "2026-10-17", label: "Competition Day", status: "tentative" },
+  { title: "S.TY International Gymnastics Cup - Day 3", date: "2026-10-18", label: "Competition Day", status: "tentative" }
+];
+
+const labelColors = {
+  "Competition Day": "bg-slate-700 text-white",
+  "Team Training ALP 1": "bg-blue-600 text-white",
+  "Team Training ALP 2": "bg-indigo-600 text-white",
+  "Evaluation Day": "bg-green-600 text-white"
+};
+
+const statusColors = {
+  "not joining": "bg-red-500 text-white",
+  tentative: "bg-yellow-300 text-black",
+  joining: "bg-green-500 text-white"
+};
+
+const eventMap = {};
+events.forEach(e => {
+  if (!eventMap[e.date]) eventMap[e.date] = [];
+  eventMap[e.date].push(e);
+});
+
+const legend = document.getElementById("legend");
+// Removed label legend (Competition label not needed)
+
+const statusLegend = document.getElementById("statusLegend");
+[
+  { name: "Not joining", key: "not joining" },
+  { name: "Tentative", key: "tentative" },
+  { name: "Joining", key: "joining" }
+].forEach(item => {
+  const span = document.createElement("span");
+  span.className = `px-3 py-1 rounded-full text-xs ${statusColors[item.key]}`;
+  span.innerText = item.name;
+  statusLegend.appendChild(span);
+});
+
+function formatDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+
+function buildMonth(year, month) {
+  const first = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startDay = first.getDay();
+
+  const cells = [];
+
+  for (let i = 0; i < startDay; i++) {
+    cells.push(null);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    cells.push(new Date(year, month, day));
+  }
+
+  while (cells.length % 7 !== 0) {
+    cells.push(null);
+  }
+
+  const weeks = [];
+  for (let i = 0; i < cells.length; i += 7) {
+    weeks.push(cells.slice(i, i + 7));
+  }
+
+  return weeks;
+}
+
+const calendar = document.getElementById("calendar");
+const year = 2026;
+
+monthNames.forEach((name, monthIndex) => {
+  const container = document.createElement("div");
+
+  container.innerHTML = `
+    <div class="text-lg font-medium mb-2">${name}</div>
+    <div class="grid grid-cols-7 text-xs text-gray-500 text-center mb-1">
+      ${weekDays.map(d => `<div>${d}</div>`).join("")}
+    </div>
+  `;
+
+  const weeks = buildMonth(year, monthIndex);
+
+  weeks.forEach(week => {
+    const row = document.createElement("div");
+    row.className = "grid grid-cols-7 gap-1 mb-1";
+
+    week.forEach(date => {
+      const cell = document.createElement("div");
+      cell.className = "relative group min-h-[60px] text-center p-1 rounded-lg hover:bg-gray-50";
+
+      if (!date) {
+        row.appendChild(cell);
+        return;
+      }
+
+      const key = formatDate(date);
+      const dayEvents = eventMap[key] || [];
+      const tooltipContent = dayEvents.map(e => `<div><strong>${e.title}</strong><br><span>${e.label} • ${e.status}</span></div>`).join("");
+
+      cell.innerHTML = `
+        <div class="text-xs text-gray-800">
+          ${date.getDate()}
+        </div>
+
+        <div class="mt-1 space-y-1">
+          ${dayEvents.slice(0,2).map(e => `
+            <div class="text-[10px] px-1 rounded ${statusColors[e.status] || 'bg-gray-200 text-gray-800'}" title="${e.label}">
+              ${e.label}
+            </div>
+          `).join("")}
+          ${dayEvents.length > 2 ? `<div class="text-[10px] text-gray-500">+${dayEvents.length-2}</div>` : ''}
+        </div>
+
+        ${dayEvents.length > 0 ? `
+          <div class="tooltip left-1/2 -translate-x-1/2 mt-1 w-max max-w-[150px] bg-black text-white text-[11px] rounded px-2 py-1 shadow">
+            ${tooltipContent}
+          </div>
+        ` : ''}
+      `;
+
+      row.appendChild(cell);
+    });
+
+    container.appendChild(row);
+  });
+
+  calendar.appendChild(container);
+});
+</script>
+
+</body>
+</html>
