@@ -6,13 +6,17 @@
   <title>Year Calendar with Events</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .tooltip {
-      position: absolute;
-      z-index: 10;
-      display: none;
-    }
-    .group:hover .tooltip {
+    .event-pill {
       display: block;
+      width: 100%;
+      border-radius: 0.375rem;
+      padding: 0.125rem 0.25rem;
+      font-size: 9px;
+      line-height: 1.2;
+      font-weight: 600;
+      text-align: left;
+      white-space: normal;
+      word-break: break-word;
     }
   </style>
 </head>
@@ -145,8 +149,7 @@ monthNames.forEach((name, monthIndex) => {
 
       const key = formatDate(date);
       const dayEvents = eventMap[key] || [];
-      const tooltipContent = dayEvents.map(e => `<div><strong>${e.title}</strong><br><span>${e.label} • ${e.status}</span></div>`).join("");
-
+      
       cell.innerHTML = `
         <div class="text-xs text-gray-800">
           ${date.getDate()}
@@ -154,18 +157,12 @@ monthNames.forEach((name, monthIndex) => {
 
         <div class="mt-1 space-y-1">
           ${dayEvents.slice(0,2).map(e => `
-            <div class="text-[10px] px-1 rounded ${statusColors[e.status] || 'bg-gray-200 text-gray-800'}" title="${e.label}">
-              ${e.label}
+            <div class="event-pill ${statusColors[e.status] || 'bg-gray-200 text-gray-800'}">
+              ${e.title}
             </div>
           `).join("")}
-          ${dayEvents.length > 2 ? `<div class="text-[10px] text-gray-500">+${dayEvents.length-2}</div>` : ''}
+          ${dayEvents.length > 2 ? `<div class="text-[10px] text-gray-500">+${dayEvents.length-2} more</div>` : ''}
         </div>
-
-        ${dayEvents.length > 0 ? `
-          <div class="tooltip left-1/2 -translate-x-1/2 mt-1 w-max max-w-[150px] bg-black text-white text-[11px] rounded px-2 py-1 shadow">
-            ${tooltipContent}
-          </div>
-        ` : ''}
       `;
 
       row.appendChild(cell);
